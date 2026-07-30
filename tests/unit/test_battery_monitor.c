@@ -3,11 +3,39 @@
 #include "battery_monitor.h"
 #include "mock_adc_driver.h"
 
+
 static uint16_t mock_battery_voltage_mv;
+
+
+/*
+ * CMock callback for ADC_Driver_ReadBatteryMv().
+ *
+ * Instead of storing a pointer for CMock to copy later,
+ * this callback writes the fake voltage directly into
+ * BatteryMonitor's output pointer when the ADC function
+ * is actually called.
+ */
+static bool Mock_ADC_Driver_ReadBatteryMv_Callback(
+    uint16_t *battery_mv,
+    int cmock_num_calls)
+{
+    (void)cmock_num_calls;
+
+    if (battery_mv == NULL)
+    {
+        return false;
+    }
+
+    *battery_mv = mock_battery_voltage_mv;
+
+    return true;
+}
+
 
 void setUp(void)
 {
     mock_battery_voltage_mv = 0U;
+
     BatteryMonitor_Init();
 }
 
@@ -18,21 +46,16 @@ void tearDown(void)
 
 
 /*
- * Helper:
- * Configure the mocked ADC driver to return
- * the requested battery voltage.
+ * Configure ADC to return a selected voltage.
  */
-
 static void MockAdcBatteryVoltage(uint16_t voltage_mv)
 {
     mock_battery_voltage_mv = voltage_mv;
-    ADC_Driver_ReadBatteryMv_ExpectAnyArgsAndReturn(true);
 
-    ADC_Driver_ReadBatteryMv_ReturnThruPtr_battery_mv(
-        &mock_battery_voltage_mv
+    ADC_Driver_ReadBatteryMv_StubWithCallback(
+        Mock_ADC_Driver_ReadBatteryMv_Callback
     );
 }
-
 
 /*
  * Test 1:
