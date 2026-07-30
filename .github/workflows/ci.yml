@@ -1,0 +1,38 @@
+name: BCM Firmware CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  unit-tests:
+    name: Ceedling Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Install Ceedling
+        run: |
+          gem install ceedling
+
+      - name: Show Ceedling version
+        run: |
+          ceedling version
+
+      - name: Run all unit tests
+        run: |
+          ceedling test:all
