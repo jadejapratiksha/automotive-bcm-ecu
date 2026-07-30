@@ -3,9 +3,11 @@
 #include "battery_monitor.h"
 #include "mock_adc_driver.h"
 
+static uint16_t mock_battery_voltage_mv;
 
 void setUp(void)
 {
+    mock_battery_voltage_mv = 0U;
     BatteryMonitor_Init();
 }
 
@@ -20,12 +22,14 @@ void tearDown(void)
  * Configure the mocked ADC driver to return
  * the requested battery voltage.
  */
+
 static void MockAdcBatteryVoltage(uint16_t voltage_mv)
 {
+    mock_battery_voltage_mv = voltage_mv;
     ADC_Driver_ReadBatteryMv_ExpectAnyArgsAndReturn(true);
 
     ADC_Driver_ReadBatteryMv_ReturnThruPtr_battery_mv(
-        &voltage_mv
+        &mock_battery_voltage_mv
     );
 }
 
