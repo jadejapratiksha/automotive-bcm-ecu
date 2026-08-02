@@ -165,6 +165,7 @@ standard names. */
 #define USE_CUSTOM_SYSTICK_HANDLER_IMPLEMENTATION 1
 
 /* USER CODE BEGIN Defines */
+#define configCHECK_FOR_STACK_OVERFLOW 2
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 /* USER CODE END Defines */
 

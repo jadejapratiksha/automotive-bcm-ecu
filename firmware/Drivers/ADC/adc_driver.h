@@ -29,5 +29,14 @@ bool ADC_Driver_ReadRaw(adc_channel_t channel,
  * Read estimated battery voltage in millivolts.
  */
 bool ADC_Driver_ReadBatteryMv(uint16_t *battery_mv);
+#ifdef RENODE_SIMULATION
+
+/*
+ * Set the battery voltage returned by the ADC driver during
+ * Renode simulation.
+ */
+void ADC_Driver_SetSimulatedBatteryMv(uint16_t battery_mv);
+
+#endif
 
 #endif /* ADC_DRIVER_H */

@@ -35,5 +35,10 @@
 			<type>2</type>
 			<location>C:/Users/jadej/OneDrive/Documents/MS_ASU/Embedded Project/automotive-bcm-ecu/firmware</location>
 		</link>
+		<link>
+			<name>firmware/Simulation</name>
+			<type>2</type>
+			<location>C:/Users/jadej/OneDrive/Documents/MS_ASU/Embedded Project/automotive-bcm-ecu/firmware/Simulation</location>
+		</link>
 	</linkedResources>
 </projectDescription>

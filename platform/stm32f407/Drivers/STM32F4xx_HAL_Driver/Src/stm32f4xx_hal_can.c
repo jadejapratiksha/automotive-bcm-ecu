@@ -332,8 +332,16 @@ HAL_StatusTypeDef HAL_CAN_Init(CAN_HandleTypeDef *hcan)
 #endif /* USE_HAL_CAN_REGISTER_CALLBACKS */
 
   /* Request initialisation */
-  SET_BIT(hcan->Instance->MCR, CAN_MCR_INRQ);
+#ifdef RENODE_SIMULATION
+/*
+ * Renode-specific bxCAN initialization workaround.
+ * Clear sleep request before requesting initialization mode.
+ */
+CLEAR_BIT(hcan->Instance->MCR, CAN_MCR_SLEEP);
+#endif
 
+/* Request initialisation */
+SET_BIT(hcan->Instance->MCR, CAN_MCR_INRQ);
   /* Get tick */
   tickstart = HAL_GetTick();
 

@@ -1,0 +1,11 @@
+using sysbus
+
+mach create "bcm"
+
+machine LoadPlatformDescription @platform/stm32f407/stm32f4.repl
+
+sysbus LoadELF @platform/stm32f407/Debug/stm32f407.elf
+
+showAnalyzer sysbus.usart2
+
+start

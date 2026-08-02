@@ -14,6 +14,7 @@ typedef struct
 
 } can_message_t;
 
+
 void CAN_Driver_Init(void);
 
 bool CAN_Driver_Send(const can_message_t *message);

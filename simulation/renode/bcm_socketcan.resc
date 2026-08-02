@@ -1,0 +1,19 @@
+using sysbus
+
+mach create "bcm"
+machine LoadPlatformDescription @platforms/cpus/stm32f4.repl
+sysbus LoadELF @platform/stm32f407/Debug/stm32f407.elf
+
+# UART terminal used by the Python GUI for PING / GET STATUS.
+emulation CreateServerSocketTerminal 12345 "bcmUart"
+connector Connect sysbus.usart2 bcmUart
+
+# Internal Renode CAN network.
+emulation CreateCANHub "canHub"
+connector Connect sysbus.can1 canHub
+
+# Linux/WSL SocketCAN bridge. vcan0 must already exist and be UP.
+machine CreateSocketCANBridge "socketcan" "vcan0"
+connector Connect socketcan canHub
+
+start

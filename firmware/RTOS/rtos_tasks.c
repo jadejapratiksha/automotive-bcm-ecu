@@ -1,6 +1,7 @@
 #include "RTOS/rtos_tasks.h"
 
 #include "cmsis_os2.h"
+#include "Simulation/sim_interface.h"
 
 #include "App/VehicleStateManager/vehicle_state_manager.h"
 #include "App/LightingManager/lighting_manager.h"
@@ -18,6 +19,9 @@ void RTOS_VehicleTask(void *argument)
     for (;;)
     {
         VehicleStateManager_MainFunction();
+#ifdef RENODE_SIMULATION
+        SimInterface_MainFunction();
+#endif
 
         osDelay(50U);
     }
@@ -80,6 +84,12 @@ void RTOS_CANTask(void *argument)
 {
     (void)argument;
 
+    /*
+        * Initialize CAN after the scheduler and CAN RX queue
+        * have been created.
+        */
+       CAN_Driver_Init();
+       CANService_Init();
     for (;;)
     {
         CANService_MainFunction();

@@ -1,0 +1,16 @@
+16:53:57.7122 [INFO] Loaded monitor commands from: C:\Program Files\Renode\scripts/monitor.py
+[0mRenode, version 1.16.1 (d66b0c2a-202602161036)
+
+
+[31;1m(monitor) [0minclude @simulation/renode/bcm.resc
+
+16:53:57.7397 [INFO] Including script(s): C:\Users\jadej\OneDrive\Documents\MS_ASU\Embedded Project\automotive-bcm-ecu\simulation\renode\bcm.resc
+16:53:57.7532 [INFO] System bus created.
+16:53:58.9092 [INFO] sysbus: Loaded SVD: C:\Users\jadej\AppData\Local\Temp\renode-18496\d0828723-41d8-4429-96ea-cee562d0b4e7.tmp. Name: STM32F40x. Description: STM32F40x.
+16:53:58.9388 [INFO] sysbus: Loading block of 33276 bytes length at 0x8000000.
+16:53:58.9465 [INFO] sysbus: Loading block of 16 bytes length at 0x80081FC.
+16:53:58.9466 [INFO] sysbus: Loading block of 20728 bytes length at 0x20000010.
+16:53:58.9679 [INFO] cpu: Guessing VectorTableOffset value to be 0x8000000.
+16:53:58.9771 [INFO] cpu: Setting initial values: PC = 0x8000D19, SP = 0x20020000.
+16:53:58.9787 [INFO] bcm: Machine started.
+[33;1m(bcm) [0m

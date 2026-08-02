@@ -6,9 +6,27 @@
 extern CAN_HandleTypeDef hcan1;
 
 
+extern UART_HandleTypeDef huart2;
+
+static void CAN_DebugPrint(const char *text)
+{
+    if (text == NULL)
+    {
+        return;
+    }
+
+    (void)HAL_UART_Transmit(
+        &huart2,
+        (uint8_t *)text,
+        (uint16_t)strlen(text),
+        100U);
+}
+
 void CAN_Driver_Init(void)
 {
-    CAN_FilterTypeDef filter_config;
+	 CAN_FilterTypeDef filter_config = {0};
+
+	 CAN_DebugPrint("CAN INIT START\r\n");
 
 
     /*
@@ -29,16 +47,24 @@ void CAN_Driver_Init(void)
 
     filter_config.SlaveStartFilterBank = 14U;
 
+    CAN_DebugPrint("CAN FILTER CONFIG\r\n");
+
     if (HAL_CAN_ConfigFilter(&hcan1,
                              &filter_config) != HAL_OK)
     {
+    	CAN_DebugPrint("CAN FILTER FAILED\r\n");
         Error_Handler();
     }
+    CAN_DebugPrint("CAN FILTER OK\r\n");
+    CAN_DebugPrint("CAN STARTING\r\n");
+
 
     if (HAL_CAN_Start(&hcan1) != HAL_OK)
     {
+    	CAN_DebugPrint("CAN START FAILED\r\n");
         Error_Handler();
     }
+    CAN_DebugPrint("CAN START OK\r\n");
 
     /*
      * Enable interrupt when a CAN message arrives in FIFO0.
@@ -47,13 +73,17 @@ void CAN_Driver_Init(void)
             &hcan1,
             CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
     {
+    	CAN_DebugPrint("CAN NOTIFICATION FAILED\r\n");
         Error_Handler();
     }
+
+    CAN_DebugPrint("CAN NOTIFICATION OK\r\n");
+    CAN_DebugPrint("CAN INIT COMPLETE\r\n");
 }
 
 bool CAN_Driver_Send(const can_message_t *message)
 {
-    CAN_TxHeaderTypeDef tx_header;
+    CAN_TxHeaderTypeDef tx_header = {0};
     uint32_t tx_mailbox;
 
     if (message == NULL)
@@ -99,8 +129,8 @@ bool CAN_Driver_Receive(can_message_t *message)
 
 void CAN_Driver_RxInterruptHandler(void)
 {
-    CAN_RxHeaderTypeDef rx_header;
-    can_message_t message;
+    CAN_RxHeaderTypeDef rx_header= {0};
+    can_message_t message= {0};
 
     if (HAL_CAN_GetRxMessage(
             &hcan1,

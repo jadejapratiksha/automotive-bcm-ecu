@@ -30,6 +30,8 @@
 #include "Services/FaultManager/fault_manager.h"
 #include "Drivers/ADC/adc_driver.h"
 #include "Drivers/CAN/can_driver.h"
+#include "Simulation/sim_interface.h"
+#include "Simulation/sim_transport_uart.h"
 
 
 #include "Services/CANService/can_service.h"
@@ -38,6 +40,9 @@
 
 #include "RTOS/rtos_tasks.h"
 #include "RTOS/rtos_queues.h"
+#include <string.h>
+#include "FreeRTOS.h"
+#include "task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,6 +65,8 @@ ADC_HandleTypeDef hadc1;
 
 CAN_HandleTypeDef hcan1;
 
+UART_HandleTypeDef huart2;
+
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
@@ -71,7 +78,7 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t VehicleTaskHandle;
 const osThreadAttr_t VehicleTask_attributes = {
   .name = "VehicleTask",
-  .stack_size = 128 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for LightingTask */
@@ -116,6 +123,7 @@ const osMessageQueueAttr_t canRxQueue_attributes = {
 };
 /* USER CODE BEGIN PV */
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -123,6 +131,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void *argument);
 void StartVehicleTask(void *argument);
 void StartLightingTask(void *argument);
@@ -137,7 +146,67 @@ void StartCANTask(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void vApplicationStackOverflowHook(
+    TaskHandle_t task_handle,
+    char *task_name
+)
+{
+    (void)task_handle;
 
+    const char prefix[] = "STACK OVERFLOW: ";
+    const char newline[] = "\r\n";
+
+    HAL_UART_Transmit(
+        &huart2,
+        (uint8_t *)prefix,
+        sizeof(prefix) - 1U,
+        1000U
+    );
+
+    if (task_name != NULL)
+    {
+        HAL_UART_Transmit(
+            &huart2,
+            (uint8_t *)task_name,
+            (uint16_t)strlen(task_name),
+            1000U
+        );
+    }
+
+    HAL_UART_Transmit(
+        &huart2,
+        (uint8_t *)newline,
+        sizeof(newline) - 1U,
+        1000U
+    );
+
+    taskDISABLE_INTERRUPTS();
+
+    while (1)
+    {
+    }
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2)
+    {
+#ifdef RENODE_SIMULATION
+        uint8_t received_byte =
+            SimTransportUart_GetReceivedByte();
+
+        SimInterface_ProcessByte(received_byte);
+
+        if (SimTransportUart_ReceiveNextByte() != HAL_OK)
+        {
+            /*
+             * Recover the receive path if HAL reports BUSY or ERROR.
+             */
+            (void)HAL_UART_AbortReceive(&huart2);
+            (void)SimTransportUart_ReceiveNextByte();
+        }
+#endif
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -161,21 +230,24 @@ int main(void)
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+    SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  MX_USART2_UART_Init();
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_ADC1_Init();
+
   /* USER CODE BEGIN 2 */
 
   GPIO_Driver_Init();
+
   ADC_Driver_Init();
-  CAN_Driver_Init();
+
 
   DoorManager_Init();
   VehicleStateManager_Init();
@@ -185,8 +257,13 @@ int main(void)
   FaultManager_Init();
   EventLogger_Init();
   DiagnosticManager_Init();
-  CANService_Init();
 
+
+
+	#ifdef RENODE_SIMULATION
+  	  SimInterface_Init();
+
+  	#endif
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -206,7 +283,7 @@ int main(void)
 
   /* Create the queue(s) */
   /* creation of canRxQueue */
-  canRxQueueHandle = osMessageQueueNew (16, sizeof(uint16_t), &canRxQueue_attributes);
+  canRxQueueHandle = osMessageQueueNew (16, sizeof(can_message_t), &canRxQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -362,6 +439,7 @@ static void MX_ADC1_Init(void)
   * @param None
   * @retval None
   */
+
 static void MX_CAN1_Init(void)
 {
 
@@ -384,13 +462,50 @@ static void MX_CAN1_Init(void)
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
+
+
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+
+  /* USER CODE BEGIN CAN1_Init 2 */
+
+
+  /* USER CODE END CAN1_Init 2 */
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN CAN1_Init 2 */
+  /* USER CODE BEGIN USART2_Init 2 */
 
-  /* USER CODE END CAN1_Init 2 */
+  /* USER CODE END USART2_Init 2 */
 
 }
 
@@ -473,7 +588,7 @@ void StartDefaultTask(void *argument)
 void StartVehicleTask(void *argument)
 {
   /* USER CODE BEGIN StartVehicleTask */
- 	VehicleStateManager_MainFunction();
+	RTOS_VehicleTask(argument);
   /* USER CODE END StartVehicleTask */
 }
 
@@ -487,7 +602,7 @@ void StartVehicleTask(void *argument)
 void StartLightingTask(void *argument)
 {
   /* USER CODE BEGIN StartLightingTask */
-	LightingManager_MainFunction();
+	RTOS_LightingTask(argument);
   /* USER CODE END StartLightingTask */
 }
 
@@ -501,7 +616,7 @@ void StartLightingTask(void *argument)
 void StartBatteryTask(void *argument)
 {
   /* USER CODE BEGIN StartBatteryTask */
-	BatteryMonitor_MainFunction();
+	RTOS_BatteryTask(argument);
   /* USER CODE END StartBatteryTask */
 }
 
@@ -515,7 +630,7 @@ void StartBatteryTask(void *argument)
 void StartFaultTask(void *argument)
 {
   /* USER CODE BEGIN StartFaultTask */
-	FaultManager_MainFunction();
+	RTOS_FaultTask(argument);
   /* USER CODE END StartFaultTask */
 }
 
@@ -529,7 +644,7 @@ void StartFaultTask(void *argument)
 void StartDiagnosticTask(void *argument)
 {
   /* USER CODE BEGIN StartDiagnosticTask */
-	DiagnosticManager_MainFunction();
+	RTOS_DiagnosticTask(argument);
   /* USER CODE END StartDiagnosticTask */
 }
 
@@ -543,7 +658,7 @@ void StartDiagnosticTask(void *argument)
 void StartCANTask(void *argument)
 {
   /* USER CODE BEGIN StartCANTask */
-	CANService_MainFunction();
+	RTOS_CANTask(argument);
   /* USER CODE END StartCANTask */
 }
 
